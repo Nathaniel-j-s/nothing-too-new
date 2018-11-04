@@ -1,0 +1,34 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Anima Second Edition</title>
+  <meta name="description" content="Anima Second Edition">
+  <meta name="author" content="SitePoint">
+  <link rel="stylesheet" href="animastyle.css?v=1.0">
+</head>
+
+<body>
+
+  <div>
+    <p>Character Creation</p>
+    <input id="rando-number" type="number">
+    <select id="profession-pick" type="number">
+      <option value="0">Simple Warriors</option>
+      <option value="1">Farmers</option>
+    </select>
+    <button onclick="createRandos()">Character(s)</button>
+  </div>
+
+  <div>
+    <p>Fight</p>
+    <button onclick="testMultiple(playerList)">Go Once</button>
+  </div>
+
+  <script src="anima2basics.js"></script>
+  <script src="anima2items.js"></script>
+  <script src="anima2charactercreation.js"></script>
+  <script src="anima2everything.js"></script>
+</body>
+</html>
