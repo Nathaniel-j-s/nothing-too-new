@@ -33,148 +33,150 @@ const professionList = [
   }
 ];
 const skillReminder = ['Acrobatics0', 'Athletics1', 'Composure2', 'Craft3', 'Perform4', 'SleightOfHand5', 'Stealth6', 'Swim7', 'Animals8', 'Appraise9', 'Arcane10', 'Culture11', 'Deception12', 'History13', 'Insight14', 'Medicine15', 'Nature16', 'Notice17', 'Persuasion18', 'Search19', 'Style20', 'Theology21'];
-function Player(config) {
-  this.charName = config.charName || 'Default';
-  this.charArch = config.charArch;
-  this.archetypeNumber = calculators.determineArchetypeNumber(this.charArch.toLowerCase());
-  this.level = config.level || 1;
-  this.descriptiveDetails = {
-    personality: config.personality || 'Player',
-    sex: config.sex || 'None',
-    profession: config.profession || 'None',
-  }
-  this.statsReference = ['Str0', 'Agi1', 'Dex2', 'Con3', 'Int4', 'Pow5', 'Wil6', 'Per7'];
-  this.baseStats = config.baseStats;
-  this.statMods = calculators.allStatMods(this.baseStats);
-  this.fumble = config.fumble || 3;
-  this.maxLP = 20 + (this.baseStats[3] * 10) + this.statMods[3] + (this.baseStats[3] * config.lifePoints);
-  this.maxFatigue = this.baseStats[3];
-  this.initiative = 20 + this.statMods[1] + this.statMods[7];
-  this.presence = 25 + (this.level * 5);
-  this.resistances = [(this.presence + this.statMods[3]), (this.presence + this.statMods[6])];
-  this.attack = this.statMods[2] + config.attack;
-  this.defense = config.defense;
-  this.wearArmor = this.statMods[0] + config.wearArmor;
-  this.maxAetherPool = this.baseStats[0] + this.baseStats[1] + this.baseStats[2] + this.baseStats[3] + this.baseStats[5] + this.baseStats[6] + config.aetherPool; // Also add DPE.
-  this.aetherAccumulations = calculators.calcAetherAccums(this.baseStats, config.aetherAccumMults);
-  this.martialKnowledge = this.baseStats[4] + config.martialKnowledge;
-  this.maxManaPool = (this.baseStats[5] * 30) + (this.level * this.statMods[3]) + config.manaPool;
-  this.manaAccumulation = calculators.calcManaAccum(this.baseStats[4], this.baseStats[5], config.manaAccumMults);
-  this.spellCostLimit = this.baseStats[4] * 10;
-  this.magicProjection = calculators.checkMagPsyProjection(this.baseStats[6], this.baseStats[7]);
-  this.spellKnowledge = this.statMods[4] * 2;
-  this.psychicPotential = (this.statMods[6] * 2) + this.statMods[5];
-  this.powersKnown = calculators.calcPsyPowersKnown(this.baseStats[4], this.baseStats[5], this.level);
-  this.psychicPoints = this.baseStats[5] * 2;
-  this.psychicProjection = calculators.checkMagPsyProjection(this.baseStats[6], this.baseStats[7]);
-  this.maxFatigueBuffer = Math.ceil(this.baseStats[0] / 2);
-  this.skillReminder = ['Acrobatics0', 'Athletics1', 'Composure2', 'Craft3', 'Perform4', 'SleightOfHand5', 'Stealth6', 'Swim7', 'Animals8', 'Appraise9', 'Arcane10', 'Culture11', 'Deception12', 'History13', 'Insight14', 'Medicine15', 'Nature16', 'Notice17', 'Persuasion18', 'Search19', 'Style20', 'Theology21'];
-  this.skills = config.skills;
-  this.devPointsTotal = 500 + (this.level * 100);
-  this.bodyReference = ['head0', 'shoulderLeft1', 'shoulderRight2', 'armLeft3', 'armRight4', 'chest5', 'stomach6', 'handLeft7', 'handRight8', 'legLeft9', 'legRight10', 'footLeft11', 'footRight12'];
-  this.charBody = [
-    new builders.Body('Head'),
-    new builders.Body('Shoulder Left'),
-    new builders.Body('Shoulder Right'),
-    new builders.Body('Arm Left'),
-    new builders.Body('Arm Right'),
-    new builders.Body('Chest'),
-    new builders.Body('Stomach'),
-    new builders.Body('Hand Left'),
-    new builders.Body('Hand Right'),
-    new builders.Body('Leg Left'),
-    new builders.Body('Leg Right'),
-    new builders.Body('Foot Left'),
-    new builders.Body('Food Right')
-  ];
-  this.activeActions = {
-    possible: this.baseStats[1],
-    performing: false,
-    remaining: this.baseStats[1]
-  };
-  this.activeEffects = [];
-  this.statuses = {
-    npc: config.npc || true,
-    alive: true,
-    specialDefense: 'None',
-    conscious: true,
-    prone: false,
-    grappled: 0,
-    accumulatingAether: false,
-    accumulatingMana: false,
-    turnsOfMana: 0,
-    turnsSinceAccumStart: 0,
-    psychicConcentrating: false
-  },
-  this.tempStats = {
-    currentBaseStats: this.baseStats,
-    currentDevPoints: config.remainingDevPoints,
-    currentLP: this.maxLP,
-    currentFatigue: this.maxFatigue,
-    currentFatigueBuffer: this.maxFatigueBuffer,
-    defenseCount: 0,
-    currentInitiative: 0,
-    currentAetherPool: this.maxAetherPool,
-    currentAetherAccums: [0, 0, 0, 0, 0, 0],
-    currentManaPool: this.maxManaPool,
-    currentManaAccum: 0,
-    roundsOfConcentration: 0,
-    allActionPenalty: {
-      total: 0,
-      endOfTurn: 0,
-      tenPerTurn: 0,
-      fivePerTurn: 0,
-      onePerTurn: 0,
-      requiresTreatment: 0,
-      unremovable: 0
+class Player {
+  constructor(config) {
+    this.charName = config.charName || 'Default';
+    this.charArch = config.charArch;
+    this.archetypeNumber = calculators.determineArchetypeNumber(this.charArch.toLowerCase());
+    this.level = config.level || 1;
+    this.descriptiveDetails = {
+      personality: config.personality || 'Player',
+      sex: config.sex || 'None',
+      profession: config.profession || 'None',
     }
-  };
-  this.defaults = {
-    defaultDefense: config.defaultDefense || 0,
-    defaultAttack: {
-      attackType: 0,
-      attackBonus: 0,
-      armorPenetration: 0,
-      damageBonus: 0,
-      blockable: true,
-      hitZoneType: 'Targeted',
-      range: 0,
-      special: ['None'],
-      directed: [0, '', 0]
+    this.statsReference = ['Str0', 'Agi1', 'Dex2', 'Con3', 'Int4', 'Pow5', 'Wil6', 'Per7'];
+    this.baseStats = config.baseStats;
+    this.statMods = calculators.allStatMods(this.baseStats);
+    this.fumble = config.fumble || 3;
+    this.maxLP = 20 + (this.baseStats[3] * 10) + this.statMods[3] + (this.baseStats[3] * config.lifePoints);
+    this.maxFatigue = this.baseStats[3];
+    this.initiative = 20 + this.statMods[1] + this.statMods[7];
+    this.presence = 25 + (this.level * 5);
+    this.resistances = [(this.presence + this.statMods[3]), (this.presence + this.statMods[6])];
+    this.attack = this.statMods[2] + config.attack;
+    this.defense = config.defense;
+    this.wearArmor = this.statMods[0] + config.wearArmor;
+    this.maxAetherPool = this.baseStats[0] + this.baseStats[1] + this.baseStats[2] + this.baseStats[3] + this.baseStats[5] + this.baseStats[6] + config.aetherPool; // Also add DPE.
+    this.aetherAccumulations = calculators.calcAetherAccums(this.baseStats, config.aetherAccumMults);
+    this.martialKnowledge = this.baseStats[4] + config.martialKnowledge;
+    this.maxManaPool = (this.baseStats[5] * 30) + (this.level * this.statMods[3]) + config.manaPool;
+    this.manaAccumulation = calculators.calcManaAccum(this.baseStats[4], this.baseStats[5], config.manaAccumMults);
+    this.spellCostLimit = this.baseStats[4] * 10;
+    this.magicProjection = calculators.checkMagPsyProjection(this.baseStats[6], this.baseStats[7]);
+    this.spellKnowledge = this.statMods[4] * 2;
+    this.psychicPotential = (this.statMods[6] * 2) + this.statMods[5];
+    this.powersKnown = calculators.calcPsyPowersKnown(this.baseStats[4], this.baseStats[5], this.level);
+    this.psychicPoints = this.baseStats[5] * 2;
+    this.psychicProjection = calculators.checkMagPsyProjection(this.baseStats[6], this.baseStats[7]);
+    this.maxFatigueBuffer = Math.ceil(this.baseStats[0] / 2);
+    this.skillReminder = ['Acrobatics0', 'Athletics1', 'Composure2', 'Craft3', 'Perform4', 'SleightOfHand5', 'Stealth6', 'Swim7', 'Animals8', 'Appraise9', 'Arcane10', 'Culture11', 'Deception12', 'History13', 'Insight14', 'Medicine15', 'Nature16', 'Notice17', 'Persuasion18', 'Search19', 'Style20', 'Theology21'];
+    this.skills = config.skills;
+    this.devPointsTotal = 500 + (this.level * 100);
+    this.bodyReference = ['head0', 'shoulderLeft1', 'shoulderRight2', 'armLeft3', 'armRight4', 'chest5', 'stomach6', 'handLeft7', 'handRight8', 'legLeft9', 'legRight10', 'footLeft11', 'footRight12'];
+    this.charBody = [
+      new builders.Body('Head'),
+      new builders.Body('Shoulder Left'),
+      new builders.Body('Shoulder Right'),
+      new builders.Body('Arm Left'),
+      new builders.Body('Arm Right'),
+      new builders.Body('Chest'),
+      new builders.Body('Stomach'),
+      new builders.Body('Hand Left'),
+      new builders.Body('Hand Right'),
+      new builders.Body('Leg Left'),
+      new builders.Body('Leg Right'),
+      new builders.Body('Foot Left'),
+      new builders.Body('Food Right')
+    ];
+    this.activeActions = {
+      possible: this.baseStats[1],
+      performing: false,
+      remaining: this.baseStats[1]
+    };
+    this.activeEffects = [];
+    this.statuses = {
+      npc: config.npc || true,
+      alive: true,
+      specialDefense: 'None',
+      conscious: true,
+      prone: false,
+      grappled: 0,
+      accumulatingAether: false,
+      accumulatingMana: false,
+      turnsOfMana: 0,
+      turnsSinceAccumStart: 0,
+      psychicConcentrating: false
     },
-    defaultTakeDownOffense: 0,
-    defaultTakeDownDefense: 0,
-    defaultDisarmOffense: 0,
-    defaultDisarmDefense: 0,
-    defaultGrappleOffense: 0,
-    defaultGrappleDefense: 0
-  };
-  this.activeEffects = [];
-  this.natural = {
-    baseStats: this.baseStats,
-    statMods: this.statMods,
-    fumble: this.fumble,
-    maxLP: this.maxLP,
-    maxFatigue: this.maxLP,
-    initiative: this.initiative,
-    presence: this.presence,
-    resistances: this.resistances,
-    attack: this.attack,
-    defense: this.defense,
-    wearArmor: this.wearArmor,
-    maxAetherPool: this.maxAetherPool,
-    aetherAccumulations: this.aetherAccumulations,
-    martialKnowledge: this.martialKnowledge,
-    maxManaPool: this.maxManaPool,
-    manaAccumulation: this.manaAccumulation,
-    spellCostLimit: this.spellCostLimit,
-    magicProjection: this.magicProjection,
-    spellKnowledge: this.spellKnowledge,
-    psychicPotential: this.psychicPotential,
-    psychicPoints: this.psychicPoints,
-    psychicProjection: this.psychicProjection,
-    maxFatigueBuffer: this.maxFatigueBuffer,
-    skills: this.skills
+    this.tempStats = {
+      currentBaseStats: this.baseStats,
+      currentDevPoints: config.remainingDevPoints,
+      currentLP: this.maxLP,
+      currentFatigue: this.maxFatigue,
+      currentFatigueBuffer: this.maxFatigueBuffer,
+      defenseCount: 0,
+      currentInitiative: 0,
+      currentAetherPool: this.maxAetherPool,
+      currentAetherAccums: [0, 0, 0, 0, 0, 0],
+      currentManaPool: this.maxManaPool,
+      currentManaAccum: 0,
+      roundsOfConcentration: 0,
+      allActionPenalty: {
+        total: 0,
+        endOfTurn: 0,
+        tenPerTurn: 0,
+        fivePerTurn: 0,
+        onePerTurn: 0,
+        requiresTreatment: 0,
+        unremovable: 0
+      }
+    };
+    this.defaults = {
+      defaultDefense: config.defaultDefense || 0,
+      defaultAttack: {
+        attackType: 0,
+        attackBonus: 0,
+        armorPenetration: 0,
+        damageBonus: 0,
+        blockable: true,
+        hitZoneType: 'Targeted',
+        range: 0,
+        special: ['None'],
+        directed: [0, '', 0]
+      },
+      defaultTakeDownOffense: 0,
+      defaultTakeDownDefense: 0,
+      defaultDisarmOffense: 0,
+      defaultDisarmDefense: 0,
+      defaultGrappleOffense: 0,
+      defaultGrappleDefense: 0
+    };
+    this.activeEffects = [];
+    this.natural = {
+      baseStats: this.baseStats,
+      statMods: this.statMods,
+      fumble: this.fumble,
+      maxLP: this.maxLP,
+      maxFatigue: this.maxLP,
+      initiative: this.initiative,
+      presence: this.presence,
+      resistances: this.resistances,
+      attack: this.attack,
+      defense: this.defense,
+      wearArmor: this.wearArmor,
+      maxAetherPool: this.maxAetherPool,
+      aetherAccumulations: this.aetherAccumulations,
+      martialKnowledge: this.martialKnowledge,
+      maxManaPool: this.maxManaPool,
+      manaAccumulation: this.manaAccumulation,
+      spellCostLimit: this.spellCostLimit,
+      magicProjection: this.magicProjection,
+      spellKnowledge: this.spellKnowledge,
+      psychicPotential: this.psychicPotential,
+      psychicPoints: this.psychicPoints,
+      psychicProjection: this.psychicProjection,
+      maxFatigueBuffer: this.maxFatigueBuffer,
+      skills: this.skills
+    }
   }
 }
 const builders = {
@@ -532,7 +534,7 @@ function letsMakeACharacter() {
   console.log(playerList[0])
 }
 
-// Random character creation thing.
+// Random character creation thing. I could probably put this inside the Player class now? We'll check on that option.
 
 function createRandomCharacter(p, n, l) {
   let c = {
