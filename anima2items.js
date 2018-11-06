@@ -29,6 +29,36 @@ class Weapon extends Item {
     this.range = config.range;
   }
 }
+class Armor extends Item {
+  constructor(config) {
+    super(config);
+    this.itemType = 'Armor';
+  }
+}
+class Good extends Item {
+  constructor(config) {
+    super(config);
+    this.itemType = 'Good';
+  }
+}
+class Other extends Item {
+  constructor(config) {
+    super(config);
+    this.itemType = 'Other';
+  }
+}
+class Equippable extends Other {
+  constructor(config) {
+    super(config);
+    this.subType = 'Equippable';
+  }
+}
+class Consumable extends Other {
+  constructor(config) {
+    super(config);
+    this.subType = 'Consumable';
+  }
+}
 function makeWeap() {
   function makeWeaponConfig() {
     let weaponInfo = {
