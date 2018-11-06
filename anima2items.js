@@ -3,25 +3,31 @@ const items = {
   armorList: [],
   otherItemList: []
 };
-function Weapon(config) {
-  this.itemName = config.weaponName;
-  this.itemType = config.weaponType;
-  this.slotType = config.slotType;
-  this.equipAction = config.equipAction;
-  this.attackBonus = config.attackBonus;
-  this.baseDamage = config.baseDamage;
-  this.weaponSpeed = config.weaponSpeed;
-  this.requiredStr = config.requiredStr;
-  this.defaultType = config.defaultType;
-  this.optionalType = config.optionalType;
-  this.blockBonus = config.blockBonus;
-  this.dodgeBonus = config.dodgeBonus;
-  this.fortitude = config.fortitude;
-  this.breakage = config.breakage;
-  this.presence = config.presence;
-  this.quality = config.quality;
-  this.twoHanded = false;
-  this.range = config.range;
+class Item {
+  constructor(config) {
+    this.itemName = config.itemName;
+    this.standardValue = config.standardValue;
+  }
+}
+class Weapon extends Item {
+  constructor(config) {
+    super(config);
+    this.itemType = 'Weapon';
+    this.attackBonus = config.attackBonus;
+    this.baseDamage = config.baseDamage;
+    this.weaponSpeed = config.weaponSpeed;
+    this.requiredStr = config.requiredStr;
+    this.defaultType = config.defaultType;
+    this.optionalType = config.optionalType;
+    this.blockBonus = config.blockBonus;
+    this.dodgeBonus = config.dodgeBonus;
+    this.fortitude = config.fortitude;
+    this.breakage = config.breakage;
+    this.presence = config.presence;
+    this.quality = config.quality;
+    this.twoHanded = false;
+    this.range = config.range;
+  }
 }
 function makeWeap() {
   function makeWeaponConfig() {
@@ -148,6 +154,7 @@ function equipWeapon(char, bodySlot, item) {
 items.weaponList.push(new Weapon(
   {
     weaponName: 'Longsword',
+    standardValue: 1000,
     weaponType: 'Weapon',
     slotType: 8,
     equipAction: 'Passive',

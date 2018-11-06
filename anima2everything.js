@@ -90,13 +90,13 @@ const abilities = {
 function resolveEndOfTurn(char) {
   char.activeActions.remaining = char.activeActions.possible;
   char.activeActions.performing = false;
-  cleanUps.recalculateAAP(char);
+  char.recalculateAAP();
   char.statuses.specialDefense = 'None';
-  cleanUps.dropExcessAether(char, false);
+  char.dropExcessAether(false);
   char.statuses.accumulatingAether = false;
   char.statuses.turnsSinceAccumStart++;
-  cleanUps.dropExcessMana(char, 'End');
-  cleanUps.dropPsychicConcentration(char, false);
+  char.dropExcessMana('End');
+  char.dropPsychicConcentration(false);
   char.statuses.psychicConcentrating;
   char.tempStats.onTheDefensive = false;
   char.tempStats.numberOfDefenses = 0;
@@ -119,7 +119,7 @@ const activeActions = {
     };
     powerConfig.potentialRoll = rollOpen(char.fumble) + char.psychicPotential;
     if (char.statuses.roundsOfConcentration > 0) { powerConfig.potentialRoll += combatCalculators.getPsyConcentrationBonus(char.statuses.roundsOfConcentration); }
-    cleanUps.dropPsychicConcentration(char, true);
+    char.dropPsychicConcentration(true);
     return new power(powerConfig);
   },
   castSpell: function(char, spell) {
@@ -215,13 +215,13 @@ const passiveActions = {
   stopAccumulation: function(char, resource) {
     if (resource === 'Aether') {
       char.statuses.accumulatingAether = false;
-      cleanUps.dropExcessAether(char, false);
+      char.dropExcessAether(false);
     } else if (resource === 'Mana') {
       char.statuses.accumulatingMana = false;
-      cleanUps.dropExcessMana(char, 'Yes');
+      char.dropExcessMana('Yes');
     } else if (resource === 'Psychic') {
       char.statuses.psychicConcentrating = false;
-      cleanUps.dropPsychicConcentration(char, true);
+      char.dropPsychicConcentration(true);
     }
   }
 };
@@ -1446,27 +1446,27 @@ const combatCalculators = {
   applyCritical: function(severity, defender, location, attackStats) {
     if (defender.statuses.conscious) {
       if (severity > 0 && severity < 51) {
-        charEdits.giveAAP(defender, severity, 2);
+        defender.giveAAP(severity, 2);
       }
       if (severity > 50 && severity < 101) {
-        charEdits.giveAAP(defender, severity, 3);
+        defender.giveAAP(severity, 3);
         if (attackStats.special.includes('Knock Out')) { defender.statuses.conscious = false; }
       }
       if (severity > 100 && severity < 151) {
-        charEdits.giveAAP(defender, severity, 4);
+        defender.giveAAP(severity, 4);
         if (location[0] === 0) {
           // deadly head shot
         }
       }
       if (severity > 150 && severity < 201) {
-        charEdits.giveAAP(defender, severity, 5);
+        defender.giveAAP(severity, 5);
         if (location[0] === 0 || location[0] === 5) {
           defender.statuses.alive = false;
           console.log('Hey. ' + defender.charName + ' is dead.');
         }
       }
       if (severity > 200) {
-        charEdits.giveAAP(defender, severity, 5);
+        defender.giveAAP(severity, 5);
         defender.statuses.alive = false;
         console.log('Hey. ' + defender.charName + ' is dead.');
       }
@@ -1548,11 +1548,11 @@ const combatCalculators = {
       console.log(char.charName + ' does not lose their accumulated mana cuz they are tough.');
     } else {
       if (roll.margin <= damage) {
-        cleanUps.dropExcessMana(char, 'Damage');
+        char.dropExcessMana('Damage');
         console.log(char.charName + ' loses their accumulated mana from the damage, but it does\'t disappear.');
       } else {
         char.tempStats.currentManaPool -= char.tempStats.currentManaAccum;
-        cleanUps.dropExcessMana(char, 'Damage');
+        char.dropExcessMana('Damage');
         console.log(char.charName + ' loses their accumulated mana and it\'s all gone. Ouch.');
       }
       char.statuses.accumulatingMana = false;
@@ -1611,7 +1611,7 @@ const combatCalculators = {
     } else {
       final.loss = fatigueArray[difficulty];
       final.success = false;
-      charEdits.takeFatigue(char, final.loss, true);
+      char.takeFatigue(final.loss, true);
       return final;
     }
   },
@@ -1849,7 +1849,7 @@ const attackStuff = {
 };
 function askForCounter(attacker, defender, counter) {
   if (!defender.statuses.npc) {
-    return prompt('Would ' + defender.charName + ' like to counterattack ' + attacker.charName + ' with a bonus of ' + counter.bonus + '? Y or N').toLowerCase();
+    return prompt(`Would ${defender.charName} like to counterattack ${attacker.charName} with a bonus of ${counter.bonus}? Y or N`).toLowerCase();
   } else {
     return 'y';
   }
@@ -1860,11 +1860,11 @@ function attackVsResist(attacker, defender, attackStats, ability) {
     let comparison = ability.resistanceDifficulty - resistanceRoll;
     let hit = false;
     if (comparison > 0) { hit = true; }
-    console.log(attacker.charName + ' targets ' + defender[i].charName + ' with ' + ability.abilityName + '. (Difficulty: ' + ability.resistanceDifficulty + ', Resistance: ' + resistanceRoll + ')');
+    console.log(`${attacker.charName} targets ${defender[i].charName} with ${ability.abilityName}. (Difficulty: ${ability.resistanceDifficulty}, Resistance: ${resistanceRoll})`);
     if (hit) {
       ability.effect(defender[i], Math.abs(comparison));
     } else {
-      console.log(defender[i].charName + ' successfully resisted against ' + ability.abilityName + '!');
+      console.log(`${defender[i].charName} successfully resisted against ${ability.abilityName}!`);
     }
   }
 }
@@ -1883,7 +1883,7 @@ function attackSimple(attacker, defender, attackStats, counter, weapon, ability)
     }
     let hit = false;
     if (attackComparison >= 0) { hit = true; }
-    console.log(attacker.charName + ' (Init: ' + attacker.tempStats.currentInitiative + ')' + ' attacks (' + attackRoll + ') - ' + defender[i].charName + ' defends (' + defenseRoll + ') = ' + attackComparison + '. Hit: ' + hit);
+    console.log(`${attacker.charName} (Init: ${attacker.tempStats.currentInitiative}) attacks (${attackRoll}) - ${defender[i].charName} defends (${defenseRoll}) = ${attackComparison}. Hit: ${hit}`);
     if (hit) {
       let location = [];
       if (attackStats.special.includes('Directed')) { location = attackStats.directed; } // attackStats.directed should be an array that is previously determined with normal location info.
@@ -1894,11 +1894,11 @@ function attackSimple(attacker, defender, attackStats, counter, weapon, ability)
       attackComparison = combatCalculators.reduceDamageFromArmor(attackComparison, armorStrength);
       let critThreshold = Math.ceil(defender[i].tempStats.currentLP / 2);
       let damage = combatCalculators.calculateDamage(attacker, attackComparison, attackStats, weapon, ability);
-      charEdits.dealDamage(defender[i], combatCalculators.modifyDamage(damage, attackStats));
-      console.log(combatCalculators.modifyDamage(damage, attackStats) + ' damage dealt with crit threshold of ' + critThreshold + '. ' + defender[i].charName + ' has ' + defender[i].tempStats.currentLP + ' remaining.');
+      defender[i].dealDamage(combatCalculators.modifyDamage(damage, attackStats));
+      console.log(`${combatCalculators.modifyDamage(damage, attackStats)} damage dealt with crit threshold of ${critThreshold}. ${defender[i].charName} has ${defender[i].tempStats.currentLP} remaining.`);
       if (damage >= critThreshold) { // The modifyDamage function should allow for criticals to continue to be calculated with full damage while the defender does not actually take it all.
         let critSeverity = combatCalculators.calculateCritSeverity(damage, defender[i]);
-        console.log('It\'s a CRIT! Severity is ' + critSeverity + ' vs the ' + location[1] + '!');
+        console.log(`It's a CRIT! Severity is ${critSeverity} vs the ${location[1]}!`);
         if (critSeverity > 0) { combatCalculators.applyCritical(critSeverity, defender[i], location, attackStats); }
       }
       combatCalculators.checkForConsciousness(defender[i]);
@@ -1917,13 +1917,13 @@ function attackSimple(attacker, defender, attackStats, counter, weapon, ability)
             console.log('Kay. No counterattack.');
           }
         } else {
-          console.log(defender[i].charName + ' cannot counter a counter!');
+          console.log(`${defender[i].charName} cannot counter a counter!`);
         }
       } else {
         console.log('The attack is too far away to counter!');
       }
       if (attackStats.blockable && !defenderSurprised && defender[i + 1]) {
-        console.log('There should not be an attack vs ' + defender[i + 1].charName +'.');
+        console.log(`There should not be an attack vs ${defender[i + 1].charName}.`)
         break;
       }
     }
@@ -2039,98 +2039,102 @@ function testAttack(list) {
 }
 
 function testMultiple(list) {
-  for (let j = 0; j < 1; j++) {
-    testAttack(list);
-    function fixEveryone(c) {
-      c.baseStats = [ 9, 9, 9, 9, 9, 9, 9, 9 ];
-      c.statMods = [ 20, 20, 20, 20, 20, 20, 2000, 20 ];
-      c.fumble = 3;
-      c.maxLP = 220;
-      c.maxFatigue = 9;
-      c.initiative = 60;
-      c.presence = 30;
-      c.resistances = [ 50, 50 ];
-      c.attack = 70;
-      c.defense = 50;
-      c.wearArmor = 70;
-      c.maxAetherPool = 87;
-      c.aetherAccumulations = [ 33, 33, 33, 33, 33, 33 ];
-      c.martialKnowledge = 25;
-      c.maxManaPool = 190;
-      c.manaAccumulation = 100;
-      c.spellCostLimit = 90;
-      c.magicProjection = 9;
-      c.spellKnowledge = 40;
-      c.psychicPotential = 60;
-      c.powersKnown = 9;
-      c.psychicPoints = 18;
-      c.psychicProjection = 9;
-      c.maxFatigueBuffer = 5;
-      c.currentFatigueBuffer = 5;
-      c.skills =
-      [ [ 0, 1 ], [ 0, 1 ], [ 0, 1 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 3 ], [ 0, 3 ], [ 0, 3 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ] ];
-      c.devPointsTotal = 600;
-      c.armor =
-      [ [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ] ];
-      c.activeActions = { possible: 3, performing: false, remaining: 3 };
-      c.statuses = {
-        npc: true,
-        alive: true,
-        specialDefense: 'None',
-        conscious: true,
-        prone: false,
-        grappled: 0,
-        accumulatingAether: false,
-        accumulatingMana: false,
-        turnsOfMana: 0,
-        turnsSinceAccumStart: 0,
-        psychicConcentrating: false
-      };
-      c.tempStats = {
-        currentDevPoints: 0,
-        currentLP: 220,
-        currentFatigue: 9,
-        defenseCount: 0,
-        currentInitiative: 0,
-        currentAetherPool: 87,
-        currentAetherAccums: [0, 0, 0, 0, 0, 0],
-        currentManaPool: 190,
-        currentManaAccum: 0,
-        roundsOfConcentration: 0,
-        allActionPenalty:
-          { total: 0,
-            endOfTurn: 0,
-            tenPerTurn: 0,
-            fivePerTurn: 0,
-            onePerTurn: 0,
-            requiresTreatment: 0,
-            unremovable: 0 },
-        onTheDefensive: false,
-        numberOfDefenses: 0,
-      };
-      c.defaults = {
-        defaultDefense: 0,
-        defaultAttack: {
-          attackType: 0,
-          attackBonus: 0,
-          armorPenetration: 0,
-          damageBonus: 0,
-          blockable: true,
-          hitZoneType: 'Targeted',
-          range: 0,
-          special: ['None'],
-          directed: [0, '', 0]
-        },
-        defaultTakeDownOffense: 0,
-        defaultTakeDownDefense: 0,
-        defaultDisarmOffense: 0,
-        defaultDisarmDefense: 0,
-        defaultGrappleOffense: 0,
-        defaultGrappleDefense: 0
-      };
-    }
-    for (let i = 0; i < list.length; i++) {
-      fixEveryone(list[i]);
+  if (list.length < 2) {
+    console.log('Lol, noob. What you are trying to do causes an infinite loop, so... stop.');
+  } else {
+    for (let j = 0; j < 1; j++) {
+      testAttack(list);
+      function fixEveryone(c) {
+        c.baseStats = [ 9, 9, 9, 9, 9, 9, 9, 9 ];
+        c.statMods = [ 20, 20, 20, 20, 20, 20, 2000, 20 ];
+        c.fumble = 3;
+        c.maxLP = 220;
+        c.maxFatigue = 9;
+        c.initiative = 60;
+        c.presence = 30;
+        c.resistances = [ 50, 50 ];
+        c.attack = 70;
+        c.defense = 50;
+        c.wearArmor = 70;
+        c.maxAetherPool = 87;
+        c.aetherAccumulations = [ 33, 33, 33, 33, 33, 33 ];
+        c.martialKnowledge = 25;
+        c.maxManaPool = 190;
+        c.manaAccumulation = 100;
+        c.spellCostLimit = 90;
+        c.magicProjection = 9;
+        c.spellKnowledge = 40;
+        c.psychicPotential = 60;
+        c.powersKnown = 9;
+        c.psychicPoints = 18;
+        c.psychicProjection = 9;
+        c.maxFatigueBuffer = 5;
+        c.currentFatigueBuffer = 5;
+        c.skills =
+        [ [ 0, 1 ], [ 0, 1 ], [ 0, 1 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 3 ], [ 0, 3 ], [ 0, 3 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ], [ 0, 2 ] ];
+        c.devPointsTotal = 600;
+        c.armor =
+        [ [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ] ];
+        c.activeActions = { possible: 3, performing: false, remaining: 3 };
+        c.statuses = {
+          npc: true,
+          alive: true,
+          specialDefense: 'None',
+          conscious: true,
+          prone: false,
+          grappled: 0,
+          accumulatingAether: false,
+          accumulatingMana: false,
+          turnsOfMana: 0,
+          turnsSinceAccumStart: 0,
+          psychicConcentrating: false
+        };
+        c.tempStats = {
+          currentDevPoints: 0,
+          currentLP: 220,
+          currentFatigue: 9,
+          defenseCount: 0,
+          currentInitiative: 0,
+          currentAetherPool: 87,
+          currentAetherAccums: [0, 0, 0, 0, 0, 0],
+          currentManaPool: 190,
+          currentManaAccum: 0,
+          roundsOfConcentration: 0,
+          allActionPenalty:
+            { total: 0,
+              endOfTurn: 0,
+              tenPerTurn: 0,
+              fivePerTurn: 0,
+              onePerTurn: 0,
+              requiresTreatment: 0,
+              unremovable: 0 },
+          onTheDefensive: false,
+          numberOfDefenses: 0,
+        };
+        c.defaults = {
+          defaultDefense: 0,
+          defaultAttack: {
+            attackType: 0,
+            attackBonus: 0,
+            armorPenetration: 0,
+            damageBonus: 0,
+            blockable: true,
+            hitZoneType: 'Targeted',
+            range: 0,
+            special: ['None'],
+            directed: [0, '', 0]
+          },
+          defaultTakeDownOffense: 0,
+          defaultTakeDownDefense: 0,
+          defaultDisarmOffense: 0,
+          defaultDisarmDefense: 0,
+          defaultGrappleOffense: 0,
+          defaultGrappleDefense: 0
+        };
+      }
+      for (let i = 0; i < list.length; i++) {
+        fixEveryone(list[i]);
+      }
     }
   }
 }

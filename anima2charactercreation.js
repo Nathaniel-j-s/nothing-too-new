@@ -33,14 +33,14 @@ const professionList = [
   }
 ];
 const skillReminder = ['Acrobatics0', 'Athletics1', 'Composure2', 'Craft3', 'Perform4', 'SleightOfHand5', 'Stealth6', 'Swim7', 'Animals8', 'Appraise9', 'Arcane10', 'Culture11', 'Deception12', 'History13', 'Insight14', 'Medicine15', 'Nature16', 'Notice17', 'Persuasion18', 'Search19', 'Style20', 'Theology21'];
-class Player {
+class Character {
   constructor(config) {
     this.charName = config.charName || 'Default';
     this.charArch = config.charArch;
     this.archetypeNumber = calculators.determineArchetypeNumber(this.charArch.toLowerCase());
     this.level = config.level || 1;
     this.descriptiveDetails = {
-      personality: config.personality || 'Player',
+      personality: config.personality || 'Character',
       sex: config.sex || 'None',
       profession: config.profession || 'None',
     }
@@ -95,7 +95,6 @@ class Player {
     };
     this.activeEffects = [];
     this.statuses = {
-      npc: config.npc || true,
       alive: true,
       specialDefense: 'None',
       conscious: true,
@@ -177,6 +176,125 @@ class Player {
       maxFatigueBuffer: this.maxFatigueBuffer,
       skills: this.skills
     }
+  }
+  applyAAP() {
+    this.tempStats.allActionPenalty.total = this.tempStats.allActionPenalty.endOfTurn + this.tempStats.allActionPenalty.tenPerTurn + this.tempStats.allActionPenalty.fivePerTurn + this.tempStats.allActionPenalty.onePerTurn + this.tempStats.allActionPenalty.requiresTreatment + this.tempStats.allActionPenalty.unremovable;
+  }
+  dealDamage(amount) {
+    this.tempStats.currentLP -= amount;
+    if (this.statuses.accumulatingMana && amount > 0) { combatCalculators.checkForManaLoss(char, amount); }
+    if (this.statuses.psychicConcentrating) { combatCalculators.checkForConcentrationLoss(char, amount); }
+  }
+  dropExcessAether(used) { // Used is a boolean, basically only false if this is run at the end of a round or the accumulation is stopped intentionally.
+    if (!this.statuses.accumulatingAether) {
+      let x = this.tempStats.currentAetherAccums;
+      if (x[0] || x[1] || x[2] || x[3] || x[4] || x[5]) {
+        if (used) {
+          this.tempStats.currentAetherPool -= (x[0] + x[1] + x[2] + x[3] + x[4] + x[5]);
+          this.tempStats.currentAetherAccums = [0, 0, 0, 0, 0, 0];
+          console.log(`${this.charName} lost ${x[0] + x[1] + x[2] + x[3] + x[4] + x[5]} aether points left over after using their technique, leaving them with ${this.tempStats.currentAetherPool}.`);
+        } else {
+          this.tempStats.currentAetherAccums = [0, 0, 0, 0, 0, 0];
+          console.log(`${this.charName}'s aether returned to their pool because they stopped gathering early.`);
+        }
+      }
+    }
+  }
+  dropExcessMana(intentional) { // If a character is hit and loses their mana, intentional should be 'Damage'. It is 'End' at the end of each round, and 'Yes' if using stopAccumulation().
+    if (intentional === 'End') {
+      if (this.statuses.turnsSinceAccumStart > this.statuses.turnsOfMana) {
+        // If this is true, it means that the character did not accumulate this turn.
+        if (this.statuses.accumulatingMana === 'Pure') {
+          this.tempStats.currentManaPool -= 10;
+          console.log(`${this.charName} loses 10 mana from their pool for stopping accumulation early.`);
+        } else if (this.statuses.accumulatingMana === 'Specific') {
+          console.log(`${this.charName} loses no mana from their pool for stopping accumulation early due to specifying a spell.`);
+        }
+        this.tempStats.currentManaAccum = 0;
+      }
+    } else if (intentional === 'Damage') {
+      if (this.statuses.accumulatingMana === 'Pure') {
+        this.tempStats.currentManaPool -= 10;
+      }
+      this.tempStats.currentManaAccum = 0;
+    } else if (intentional === 'Yes') {
+      if (this.statuses.accumulatingMana === 'Pure') {
+        this.tempStats.currentManaPool -= 10;
+        console.log(`${this.charName} loses 10 mana from their pool for stopping accumulation early.`);
+      } else if (this.statuses.accumulatingMana === 'Specific') {
+        console.log(`${this.charName} loses no mana from their pool for stopping accumulation early due to specifying a spell.`);
+      }
+      this.tempStats.currentManaAccum = 0;
+    }
+    if (this.statuses.turnsSinceAccumStart > 0 && this.tempStats.currentManaAccum === 0) {
+      this.statuses.turnsSinceAccumStart = 0;
+    }
+  }
+  dropPsychicConcentration(used) {
+    if (!this.statuses.psychicConcentrating || used) {
+      this.tempStats.roundsOfConcentration = 0;
+    }
+  }
+  giveAAP(amount, type) { // To remove AAP that requires treatment, just run this with a negative amount and type 4.
+    let reference = ['End of Turn 0', 'Ten per Turn 1', 'Five per Turn 2', 'One per Turn 3', 'Requires Treatment 4', 'Unremovable 5'];
+    if (type === 0) {
+      this.tempStats.allActionPenalty.endOfTurn += amount;
+    } else if (type === 1) {
+      this.tempStats.allActionPenalty.tenPerTurn += amount;
+    } else if (type === 2) {
+      this.tempStats.allActionPenalty.fivePerTurn += amount;
+    } else if (type === 3) {
+      this.tempStats.allActionPenalty.onePerTurn += amount;
+    } else if (type === 4) {
+      this.tempStats.allActionPenalty.requiresTreatment += amount;
+    } else if (type === 5) {
+      this.tempStats.allActionPenalty.unremovable += amount;
+    } else {
+      console.log('Error. No such AAP type.');
+    }
+    this.applyAAP();
+  }
+  healDamage(amount) {
+    this.tempStats.currentLP += amount;
+    if (this.tempStats.currentLP > this.maxLP) {
+      this.tempStats.currentLP = this.maxLP;
+      console.log(`${this.charName} has been fully healed and can't be healed further.`);
+    }
+  }
+  recalculateAAP() {
+    this.tempStats.allActionPenalty.endOfTurn = 0;
+    this.tempStats.allActionPenalty.tenPerTurn -= 10;
+    if (this.tempStats.allActionPenalty.tenPerTurn < 0) { this.tempStats.allActionPenalty.tenPerTurn = 0; }
+    this.tempStats.allActionPenalty.fivePerTurn -= 5;
+    if (this.tempStats.allActionPenalty.fivePerTurn < 0) { this.tempStats.allActionPenalty.fivePerTurn = 0; }
+    this.tempStats.allActionPenalty.onePerTurn -= 1;
+    if (this.tempStats.allActionPenalty.onePerTurn < 0) { this.tempStats.allActionPenalty.onePerTurn = 0; }
+    this.applyAAP();
+  }
+  takeFatigue(amount, psychic) {
+    if (psychic) {
+      if (this.tempStats.currentFatigueBuffer > 0) {
+        this.tempStats.currentFatigueBuffer -= amount;
+        if (this.tempStats.currentFatigueBuffer < 0) {
+          this.tempStats.currentFatigue -= Math.abs(this.tempStats.currentFatigueBuffer);
+          this.tempStats.currentFatigueBuffer = 0;
+        }
+      } else {
+        this.tempStats.currentFatigue -= amount;
+      }
+      console.log(`${this.charName} lost ${amount} fatigue in failing to activate a psychic power.`);
+    } else {
+      this.tempStats.currentFatigue -= amount;
+    }
+    if (this.tempStats.currentFatigue < 1) {
+      // Go unconscious.
+    }
+  }
+}
+class NPC extends Character {
+  constructor(config) { // Do I have to pass in... everything?
+    super(config);
+    this.statuses.npc = true;
   }
 }
 const builders = {
@@ -342,7 +460,7 @@ const calculators = {
 
 function letsMakeACharacter() {
   function storeCharacter(config) {
-    return new Player(config);
+    return new Character(config);
   }
   function makeConfig() {
     let characterInfo = {
@@ -509,7 +627,6 @@ function letsMakeACharacter() {
   }
   var defaultCharacterInfo = {
     charName: '',
-    npc: true,
     charArch: '',
     level: 1,
     baseStats: [5, 5, 5, 5, 5, 5, 5, 5],
@@ -534,12 +651,11 @@ function letsMakeACharacter() {
   console.log(playerList[0])
 }
 
-// Random character creation thing. I could probably put this inside the Player class now? We'll check on that option.
+// Random character creation thing. I could probably put this inside the Character class now? We'll check on that option.
 
 function createRandomCharacter(p, n, l) {
   let c = {
     charName: 'Randomized',
-    npc: true,
     charArch: '',
     level: 1,
     baseStats: [5, 5, 5, 5, 5, 5, 5, 5],
@@ -872,7 +988,7 @@ function createRandomCharacter(p, n, l) {
     }
   }
   c.charArch = calculators.reverseArchetypeNumber(c.charArch);
-  playerList.push(new Player(c));
+  playerList.push(new NPC(c));
 }
 
 // Example: createRandomCharacter(professionList[0], 'John', 1);

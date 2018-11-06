@@ -94,10 +94,6 @@ function checkVsBasicDifficulty(num) {
 }
 
 const charEdits = {
-  applyAAP: function(char) {
-    let easier = char.tempStats.allActionPenalty;
-    char.tempStats.allActionPenalty.total = easier.endOfTurn + easier.tenPerTurn + easier.fivePerTurn + easier.onePerTurn + easier.requiresTreatment + easier.unremovable;
-  },
   blind: function(char, turns) {
     charEdits.giveAAP(char, 200, 5);
     console.log(char.charName + ' has been blinded!');
@@ -112,124 +108,14 @@ const charEdits = {
       }
     );
   },
-  dealDamage: function(char, amount) {
-    char.tempStats.currentLP -= amount;
-    if (char.statuses.accumulatingMana && amount > 0) { combatCalculators.checkForManaLoss(char, amount); }
-    if (char.statuses.psychicConcentrating) { combatCalculators.checkForConcentrationLoss(char, amount); }
-  },
-  giveAAP: function(char, amount, type) { // To remove AAP that requires treatment, just run this with a negative amount and type 4.
-    let reference = ['End of Turn 0', 'Ten per Turn 1', 'Five per Turn 2', 'One per Turn 3', 'Requires Treatment 4', 'Unremovable 5'];
-    if (type === 0) {
-      char.tempStats.allActionPenalty.endOfTurn += amount;
-    } else if (type === 1) {
-      char.tempStats.allActionPenalty.tenPerTurn += amount;
-    } else if (type === 2) {
-      char.tempStats.allActionPenalty.fivePerTurn += amount;
-    } else if (type === 3) {
-      char.tempStats.allActionPenalty.onePerTurn += amount;
-    } else if (type === 4) {
-      char.tempStats.allActionPenalty.requiresTreatment += amount;
-    } else if (type === 5) {
-      char.tempStats.allActionPenalty.unremovable += amount;
-    } else {
-      console.log('Error. No such AAP type.');
-    }
-    this.applyAAP(char);
-  },
-  healDamage: function(char, amount) {
-    char.tempStats.currentLP += amount;
-    if (char.tempStats.currentLP > char.maxLP) {
-      char.tempStats.currentLP = char.maxLP;
-      console.log(char.charName + ' has been fully healed and can\'t be healed further.');
-    }
-  },
-  takeFatigue: function(char, amount, psychic) {
-    if (psychic) {
-      if (char.tempStats.currentFatigueBuffer > 0) {
-        char.tempStats.currentFatigueBuffer -= amount;
-        if (char.tempStats.currentFatigueBuffer < 0) {
-          char.tempStats.currentFatigue -= Math.abs(char.tempStats.currentFatigueBuffer);
-          char.tempStats.currentFatigueBuffer = 0;
-        }
-      } else {
-        char.tempStats.currentFatigue -= amount;
-      }
-      console.log(char.charName + ' lost ' + amount + ' fatigue in failing to activate a psychic power.');
-    } else {
-      char.tempStats.currentFatigue -= amount;
-    }
-    if (char.tempStats.currentFatigue < 1) {
-      // Go unconscious.
-    }
-  },
 };
-const cleanUps = {
+const errorChecks = {
   addedEffectVerify: function(used, min, max) {
     let manaUsed = used;
     if (manaUsed < min) { console.log('Character shouldn\'t be able to cast this spell because they haven\'t accumulated enough mana. Something went wrong.'); }
     if (manaUsed > max) { manaUsed = max; }
     return Math.floor((manaUsed - min) / 10);
   },
-  dropExcessAether: function(char, used) { // Used is a boolean, basically only false if this is run at the end of a round or the accumulation is stopped intentionally.
-    if (!char.statuses.accumulatingAether) {
-      let x = char.tempStats.currentAetherAccums;
-      if (x[0] || x[1] || x[2] || x[3] || x[4] || x[5]) {
-        if (used) {
-          char.tempStats.currentAetherPool -= (x[0] + x[1] + x[2] + x[3] + x[4] + x[5]);
-          char.tempStats.currentAetherAccums = [0, 0, 0, 0, 0, 0];
-          console.log(char.charName + ' lost ' + (x[0] + x[1] + x[2] + x[3] + x[4] + x[5]) + ' aether points left over after using their technique, leaving them with ' + char.tempStats.currentAetherPool);
-        } else {
-          char.tempStats.currentAetherAccums = [0, 0, 0, 0, 0, 0];
-          console.log(char.charName + '\'s aether returned to their pool because they stopped gathering early.')
-        }
-      }
-    }
-  },
-  dropExcessMana: function(char, intentional) { // If a character is hit and loses their mana, intentional should be 'Damage'. It is 'End' at the end of each round, and 'Yes' if using stopAccumulation().
-    if (intentional === 'End') {
-      if (char.statuses.turnsSinceAccumStart > char.statuses.turnsOfMana) {
-        // If this is true, it means that the character did not accumulate this turn.
-        if (char.statuses.accumulatingMana === 'Pure') {
-          char.tempStats.currentManaPool -= 10;
-          console.log(char.charName + ' loses 10 mana from their pool for stopping accumulation early.');
-        } else if (char.statuses.accumulatingMana === 'Specific') {
-          console.log(char.charName + ' loses no mana from their pool for stopping accumulation early due to specifying a spell.');
-        }
-        char.tempStats.currentManaAccum = 0;
-      }
-    } else if (intentional === 'Damage') {
-      if (char.statuses.accumulatingMana === 'Pure') {
-        char.tempStats.currentManaPool -= 10;
-      }
-      char.tempStats.currentManaAccum = 0;
-    } else if (intentional === 'Yes') {
-      if (char.statuses.accumulatingMana === 'Pure') {
-        char.tempStats.currentManaPool -= 10;
-        console.log(char.charName + ' loses 10 mana from their pool for stopping accumulation early.');
-      } else if (char.statuses.accumulatingMana === 'Specific') {
-        console.log(char.charName + ' loses no mana from their pool for stopping accumulation early due to specifying a spell.');
-      }
-      char.tempStats.currentManaAccum = 0;
-    }
-    if (char.statuses.turnsSinceAccumStart > 0 && char.tempStats.currentManaAccum === 0) {
-      char.statuses.turnsSinceAccumStart = 0;
-    }
-  },
-  dropPsychicConcentration: function(char, used) {
-    if (!char.statuses.psychicConcentrating || used) {
-      char.tempStats.roundsOfConcentration = 0;
-    }
-  },
-  recalculateAAP: function(char) {
-    char.tempStats.allActionPenalty.endOfTurn = 0;
-    char.tempStats.allActionPenalty.tenPerTurn -= 10;
-    if (char.tempStats.allActionPenalty.tenPerTurn < 0) { char.tempStats.allActionPenalty.tenPerTurn = 0; }
-    char.tempStats.allActionPenalty.fivePerTurn -= 5;
-    if (char.tempStats.allActionPenalty.fivePerTurn < 0) { char.tempStats.allActionPenalty.fivePerTurn = 0; }
-    char.tempStats.allActionPenalty.onePerTurn -= 1;
-    if (char.tempStats.allActionPenalty.onePerTurn < 0) { char.tempStats.allActionPenalty.onePerTurn = 0; }
-    charEdits.applyAAP(char);
-  }
 };
 
 function Attack(config) {
