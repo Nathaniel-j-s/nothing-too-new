@@ -118,17 +118,19 @@ const errorChecks = {
   },
 };
 
-function Attack(config) {
-  this.attackType = config.attackType;
-  this.range = config.range || 0;
-  this.attackBonus = config.attackBonus || 0;
-  this.attackLimit = config.attackLimit || 0;
-  this.armorPenetration = config.armorPenetration || 0;
-  this.damageBonus = config.damageBonus || 0;
-  this.blockable = config.blockable || true;
-  this.hitZoneType = config.hitZoneType || 'Targeted';
-  this.special = config.special || [];
-  this.directed = config.directed || [0, '', 0];
+class Attack {
+  constructor(config) {
+    this.attackType = config.attackType;
+    this.range = config.range || 0;
+    this.attackBonus = config.attackBonus || 0;
+    this.attackLimit = config.attackLimit || 0;
+    this.armorPenetration = config.armorPenetration || 0;
+    this.damageBonus = config.damageBonus || 0;
+    this.blockable = config.blockable || true;
+    this.hitZoneType = config.hitZoneType || 'Targeted';
+    this.special = config.special || [];
+    this.directed = config.directed || [0, '', 0];
+  }
 }
 const campaignDetails = {
   deadliness: 50,
