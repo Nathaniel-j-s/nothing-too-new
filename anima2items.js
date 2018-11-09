@@ -33,6 +33,7 @@ class Armor extends Item {
   constructor(config) {
     super(config);
     this.itemType = 'Armor';
+    this.rigidity = config.rigidity;
   }
 }
 class Good extends Item {
@@ -111,7 +112,7 @@ function makeArmor() { // Unfinished.
       slotType: [],
       equipAction: 'Active',
       armorValues: [],
-
+      rigidity: ''
     }
     function buildArmorInfo() {
       armorInfo.armorName = prompt('What is this armor called?');
@@ -121,6 +122,8 @@ function makeArmor() { // Unfinished.
       let slotNumber = parseInt(prompt('How many body slots does this armor cover? (We\'ll get which ones next.)'));
       for (let i = 0; i < slotNumber; i++) { slots.push(parseInt(prompt('Select what slot this item goes into: Head 0, Shoulder Left 1, Shoulder Right 2, Arm Left 3, Arm Right 4, Chest 5, Stomach 6, Hand Left 7, Hand Right 8, Leg Left 9, Leg Right 10, Foot Left 11, Foot Right 12'))); }
       armorInfo.slotType = slots;
+
+      armorInfo.rigidity = prompt('Is this armor Hard or Soft?');
 
       armorInfo.equipAction = prompt('What action does this require to equip? Active, Passive, Noncombat');
 
