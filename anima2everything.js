@@ -1981,23 +1981,19 @@ function mTEOnlyPassives(p) {
   console.log(p.charName + ' is not performing active actions this turn.');
 }
 function testActions(performer, target, list) {
-  if (!list[performer].tempStats.onTheDefensive) {
-    if (activeActions.useActive(list[performer], true)) {
-      mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
-      // if (performer % 2 === 0) {
-      //   mTEWithPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
-      // } else {
-      //   if (performer === 1) {
-      //     mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
-      //   } else {
-      //     mTEOnlyPassives(list[performer]);
-      //   }
-      // }
-    } else {
-      console.log(list[performer].charName + ' is not capable of performing any action type.');
-    }
+  if (activeActions.useActive(list[performer], true)) {
+    mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
+    // if (performer % 2 === 0) {
+    //   mTEWithPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
+    // } else {
+    //   if (performer === 1) {
+    //     mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
+    //   } else {
+    //     mTEOnlyPassives(list[performer]);
+    //   }
+    // }
   } else {
-    console.log(`${list[performer].charName} (Init: ${list[performer].tempStats.currentInitiative}) is on the defensive and can't act.`);
+    console.log(list[performer].charName + ' is not capable of performing any action type.');
   }
 }
 function determineRandomTarget(avoid, num) {
@@ -2019,7 +2015,11 @@ function testAttack(list) {
     console.log('%cTURN COUNTER: ' + (i + 1), 'color: rgb(126, 168, 255)');
     rollInitiativeAndSort(list);
     for (let j = 0; j < list.length; j++) {
-      testActions(j, determineRandomTarget(j, list.length), list);
+      if (!list[j].tempStats.onTheDefensive) {
+        testActions(j, determineRandomTarget(j, list.length), list);
+      } else {
+        console.log(`${list[j].charName} (Init: ${list[j].tempStats.currentInitiative}) is on the defensive and can't act.`);
+      }
     }
     for (let j = 0; j < list.length; j++) {
       resolveEndOfTurn(list[j]);
