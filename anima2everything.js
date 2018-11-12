@@ -1935,7 +1935,7 @@ function rollInitiativeAndSort(list) {
     list[i].tempStats.currentInitiative = rollOpen(list[i].fumble) + list[i].initiative - list[i].charBody[8].equippedWeapon.weaponSpeed - list[i].tempStats.allActionPenalty.total;
   }
   list.sort(function(a, b) {
-    return b.tempStats.currentInitiative > a.tempStats.currentInitiative;
+    return b.tempStats.currentInitiative - a.tempStats.currentInitiative;
   });
 }
 
@@ -1981,19 +1981,23 @@ function mTEOnlyPassives(p) {
   console.log(p.charName + ' is not performing active actions this turn.');
 }
 function testActions(performer, target, list) {
-  if (activeActions.useActive(list[performer], true)) {
-    mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
-    // if (performer % 2 === 0) {
-    //   mTEWithPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
-    // } else {
-    //   if (performer === 1) {
-    //     mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
-    //   } else {
-    //     mTEOnlyPassives(list[performer]);
-    //   }
-    // }
+  if (!list[performer].tempStats.onTheDefensive) {
+    if (activeActions.useActive(list[performer], true)) {
+      mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
+      // if (performer % 2 === 0) {
+      //   mTEWithPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
+      // } else {
+      //   if (performer === 1) {
+      //     mTENoPassives(list[performer], selectTarget(list[target].charName, list), abilities.aether.offensive.tester);
+      //   } else {
+      //     mTEOnlyPassives(list[performer]);
+      //   }
+      // }
+    } else {
+      console.log(list[performer].charName + ' is not capable of performing any action type.');
+    }
   } else {
-    console.log(list[performer].charName + ' is not capable of performing any action type.');
+    console.log(`${list[performer].charName} (Init: ${list[performer].tempStats.currentInitiative}) is on the defensive and can't act.`);
   }
 }
 function determineRandomTarget(avoid, num) {

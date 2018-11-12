@@ -292,7 +292,7 @@ class Character {
   }
 }
 class NPC extends Character {
-  constructor(config) { // Do I have to pass in... everything?
+  constructor(config) {
     super(config);
     this.statuses.npc = true;
   }
