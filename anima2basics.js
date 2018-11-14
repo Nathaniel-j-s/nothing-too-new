@@ -92,6 +92,9 @@ function checkVsBasicDifficulty(num) {
   else if (num >= 450) { final = { value: 12, valueName: 'Godly', roll: num }; }
   return final;
 }
+function inputPhysicalRoll(reason) {
+  var result = parseInt(prompt(`Please enter a roll for @{reason}`));
+}
 
 const charEdits = {
   blind: function(char, turns) {
