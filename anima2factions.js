@@ -5,6 +5,15 @@ class Faction {
     this.belief = config.belief;
     this.relations = config.relations; // This should be an array of objects consisting of a factionName and degree (which will range from -100 to 100).
   }
+  influence(influencer, targetFaction) {
+    // This is where this should go.
+  }
+}
+
+class Relationship extends Faction {
+  constructor(config) {
+    super(config);
+  }
 }
 
 // A fellow faction member's relations can be modified by a character with a standing of 25 or higher.
