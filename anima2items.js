@@ -34,6 +34,8 @@ class Armor extends Item {
     super(config);
     this.itemType = 'Armor';
     this.rigidity = config.rigidity;
+    this.covered = config.covered; // Array of 13 booleans.
+    this.armorValues = config.armorValues; // Array of 6 numbers between 1 and 10.
   }
 }
 class Good extends Item {
