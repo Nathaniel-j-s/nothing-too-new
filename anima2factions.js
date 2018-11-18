@@ -20,3 +20,5 @@ class Relationship extends Faction {
 // A character's faction relations may only be modified if their belief is above 25 however.
 // The higher an influencer's standing combines with the character's belief to create their modification.
 // This can result in the character being affected further than intended by the influencer.
+
+// May require a full rework. Something about this seems like it won't fit in the overall scheme of the game.
