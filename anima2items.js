@@ -206,3 +206,5 @@ items.weaponList.push(new Weapon(
     range: 1
   }
 ))
+
+// Need to come up with how to make armor consistently.
