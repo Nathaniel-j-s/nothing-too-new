@@ -22,3 +22,8 @@ class Relationship extends Faction {
 // This can result in the character being affected further than intended by the influencer.
 
 // May require a full rework. Something about this seems like it won't fit in the overall scheme of the game.
+
+// Okay. So what we need is a system for personal relationships, relationships to factions, and a way to be identified by faction.
+// Personal relationships will affect: Aggression/peace on sight, relationship to any factions displayed.
+// Faction relationships will affect: Aggression/peace upon knowledge of faction, relationship to individual upon knowledge of faction.
+// Faction identification will be a function that is run by a character declaring faction or upon sight of identifying factors.
