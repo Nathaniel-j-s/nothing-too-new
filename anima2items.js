@@ -7,6 +7,8 @@ class Item {
   constructor(config) {
     this.itemName = config.itemName;
     this.standardValue = config.standardValue;
+    this.presence = config.presence;
+    this.factions = config.factions; // This will be an array of objects {factionName, difficulty} with difficulty being on a scale of 1-5 for how easy it is to tell that the faction's influence is present.
   }
 }
 class Weapon extends Item {
@@ -23,7 +25,6 @@ class Weapon extends Item {
     this.dodgeBonus = config.dodgeBonus;
     this.fortitude = config.fortitude;
     this.breakage = config.breakage;
-    this.presence = config.presence;
     this.quality = config.quality;
     this.twoHanded = false;
     this.range = config.range;
