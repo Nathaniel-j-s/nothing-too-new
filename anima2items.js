@@ -37,6 +37,8 @@ class Armor extends Item {
     this.rigidity = config.rigidity;
     this.covered = config.covered; // Array of 13 booleans.
     this.armorValues = config.armorValues; // Array of 6 numbers between 1 and 10.
+    this.armorSpeed = config.armorSpeed;
+    this.requiredWA = config.requiredWA;
   }
 }
 class Good extends Item {
