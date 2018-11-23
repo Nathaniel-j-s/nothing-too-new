@@ -10,9 +10,28 @@ class Faction {
   }
 }
 
-class Relationship extends Faction {
+class Relationship {
   constructor(config) {
-    super(config);
+    this.char = config.char;
+    this.level = config.level;
+    this.relationshipType = config.relationshipType;
+  }
+  increase(amount) {
+    this.level += amount;
+  }
+  decrease(amount) {
+    this.level -= amount;
+  }
+  changeType(type) {
+    this.relationshipType = type;
+  }
+}
+
+function generateRelationship() {
+  let config = {
+    char: '',
+    level: 0,
+    relationshipType: ''
   }
 }
 
