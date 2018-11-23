@@ -33,6 +33,7 @@ function generateRelationship() {
     level: 0,
     relationshipType: ''
   }
+  return new Relationship(config);
 }
 
 // A fellow faction member's relations can be modified by a character with a standing of 25 or higher.
