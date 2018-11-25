@@ -769,6 +769,7 @@ function createRandomCharacter(p, n, l) {
       this.introvertedExtroverted = randomCalcs.getAverageForPersonality();
       this.satisfiedCurious = randomCalcs.getAverageForPersonality();
       this.cleanMessy = randomCalcs.getAverageForPersonality();
+      this.quietLoud = randomCalcs.getAverageForPersonality();
     },
     randomizeSex: function() {
       let roll = rollSmall(1000);
