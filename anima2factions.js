@@ -27,13 +27,33 @@ class Relationship {
   }
 }
 
-function generateRelationship() {
-  let config = {
-    char: '',
-    level: 0,
+function generateRelationship(charName, level, special) {
+  let c = {
+    char: charName,
+    level: level,
     relationshipType: ''
   }
-  return new Relationship(config);
+  if (c.level >= 0 && c.level <= 25) { c.relationshipType = 'Acquaintance'; }
+  if (c.level >= 26 && c.level <= 50) { c.relationshipType = 'Ally'; }
+  if (c.level >= 51 && c.level <= 75) { c.relationshipType = 'Friend'; }
+  if (c.level >= 76) { c.relationshipType = 'Close Friend'; }
+  if (c.level < 0 && c.level >= -33) { c.relationshipType = 'Annoyance'; }
+  if (c.level < 33 && c.level >= -66) { c.relationshipType = 'Hostile'; }
+  if (c.level < 66 && c.level >= -98) { c.relationshipType = 'Enemy'; }
+  if (c.level < 98) { c.relationshipType = 'Pure Hatred'; }
+  return new Relationship(c);
+}
+
+function determineInitialRelationshipLevel() {
+  // This function will compare visual factions of a character against another character's opinions.
+}
+
+class Opinion {
+  constructor(config) {
+    this.subject = config.subject;
+    this.level = config.level;
+    this.factors = config.factors; // This was originally going to be in a separate class, Knowledge.
+  }
 }
 
 // A fellow faction member's relations can be modified by a character with a standing of 25 or higher.
