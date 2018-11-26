@@ -295,6 +295,7 @@ class NPC extends Character {
   constructor(config) {
     super(config);
     this.statuses.npc = true;
+    // Is this where I put opinion generators?
   }
 }
 const builders = {
