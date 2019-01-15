@@ -1,3 +1,3 @@
 function createAction() {
-  return ``;
+  let final = `${actionType}(${performer}, ${target})`;
 }
